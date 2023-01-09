@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./HelperFunction.sol";
 
-contract testSyntax is HelperFunction {
+contract TestSyntax {
     // function for_test(uint256 _i) external view returns (uint256) {
     //     uint256 time;
     //     for (time; time < 10; time++) {
@@ -38,7 +38,7 @@ contract testSyntax is HelperFunction {
     //     return copy();
     // }
 
-    function _copy() external pure returns (uint256) {
-        return copy();
-    }
+    // function _copy() external pure returns (uint256) {
+    //     return copy();
+    // }
 }

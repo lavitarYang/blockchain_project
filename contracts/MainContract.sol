@@ -20,7 +20,8 @@ contract MainContract {
         bool out;
     }
     //state variable
-    /*  paticipants_storage :   1. no restriction for number of player.
+    /*  paticipants_storage : 
+                        1. at least 2 member to game
                         2. asset is 10 times bank_balance.
                         3. out default as false
         
@@ -41,7 +42,7 @@ contract MainContract {
     }
 
     // ----------------------instantiate interface--------------------
-    /*  it has to be called out off B and in order
+    /*  it has to be called out off Bank and in order
         bankInstance = await Bank.deployed()
         app          = await MainContract.depolyed()
         await app.depoBank(bankInstance.address);
@@ -55,14 +56,25 @@ contract MainContract {
     }
 
     // ----------------------bank utility-----------------------------
+
+    function Bank_response() external view returns (string memory) {
+        Bank bank_instance = Bank(bank_interface);
+        return bank_instance.response();
+    }
+
     function Bank_getbalance() external view returns (uint256) {
         Bank bank_instance = Bank(bank_interface);
         return bank_instance.getbalance();
     }
 
-    function Bank_response() external view returns (string memory) {
+    function Bank_deposit() external payable {
         Bank bank_instance = Bank(bank_interface);
-        return bank_instance.response();
+        bank_instance.deposit();
+    }
+
+    function Bank_withdraw(uint256 amount) external payable {
+        Bank bank_instance = Bank(bank_interface);
+        bank_instance.withdraw(amount);
     }
 
     // ----------------------shop utility-----------------------------

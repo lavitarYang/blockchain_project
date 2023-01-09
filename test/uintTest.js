@@ -1,5 +1,5 @@
 var MainContract = artifacts.require('./MainContract.sol');
-var testSyntax = artifacts.require('./testSyntax.sol');
+var testSyntax = artifacts.require('./TestSyntax.sol');
 var HelperFunction = artifacts.require('./HelperFunction.sol');
 var Bank = artifacts.require("Bank.sol");
 contract("deployer", () => {
@@ -59,19 +59,30 @@ contract("MainContract", async () => {
         const response = await maincontract.Bank_response()
         assert(response === "hello");
     });
-    it("get balance from other contract", async () => {
+    it("get balance withinmain", async () => {
         const bank = await Bank.deployed();
         const maincontract = await MainContract.deployed();
         const accounts = await web3.eth.getAccounts();
         await maincontract.depoBank(bank.address);
         await bank.deposit({ from: accounts[3], value: web3.utils.toWei('0.00000000000025', 'Ether') });
         let balance = await maincontract.Bank_getbalance({ from: accounts[3] });
-        let compare = await web3.utils.toWei('0.00000000000025', 'Ether');
         assert(balance.words[0] === 250000);
+    });
+    it("deposit first time within main",async()=>{
+        const bank = await Bank.deployed();
+        const main = await MainContract.deployed();
+        const accs = await web3.eth.getAccounts();
+        await main.depoBank(bank.address);
+        await main.Bank_deposit({from:accs[4],value:web3.utils.toWei('0.00000000000025',"Ether")});
+        // await bank.deposit({ from: accs[4], value: web3.utils.toWei('0.00000000000025', 'Ether') });
+
+        const balc= await main.Bank_getbalance({from:accs[4]});
+        console.log(balc);
+        assert(balc.words[0]===250000);
     });
 
 });
-contract("bank", async () => {
+contract("bank itself", async () => {
     it("get balance as default", async () => {
         const accounts = await web3.eth.getAccounts();
         const app = await Bank.deployed();
