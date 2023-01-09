@@ -41,6 +41,15 @@ contract MainContract {
     }
 
     // ----------------------instantiate interface--------------------
+    /*  it has to be called out off B and in order
+        bankInstance = await Bank.deployed()
+        app          = await MainContract.depolyed()
+        await app.depoBank(bankInstance.address);
+            -after done above job then move to bank utility section
+            -for instance:
+        response = await app.Bank_response()
+        balance  = await app.Bank_getbalance()
+     */
     function depoBank(address _a) external {
         bank_interface = _a;
     }
@@ -49,6 +58,11 @@ contract MainContract {
     function Bank_getbalance() external view returns (uint256) {
         Bank bank_instance = Bank(bank_interface);
         return bank_instance.getbalance();
+    }
+
+    function Bank_response() external view returns (string memory) {
+        Bank bank_instance = Bank(bank_interface);
+        return bank_instance.response();
     }
 
     // ----------------------shop utility-----------------------------
