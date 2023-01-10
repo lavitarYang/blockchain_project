@@ -4,6 +4,30 @@ pragma solidity ^0.8.0;
 contract MainContract {
     address public admin;
     bool start = false;
+    uint256 player = 0;
+    struct rank {
+        address player_address;
+        uint256 asset;
+    }
+
+    function onchainSort() external view onlyOwner returns (rank[] memory) {
+        rank[] memory arr = new rank[](player);
+        for (uint256 i = 0; i < player; i++) {
+            arr[i].player_address = key[i];
+            arr[i].asset = paticipants_storage[key[i]].asset;
+        }
+        for (uint256 i = 1; i < player; i++) {
+            for (uint256 j = 0; j < player - i; j++) {
+                if (arr[j].asset < arr[j + 1].asset) {
+                    rank memory temp = arr[j];
+                    arr[j] = arr[j + 1];
+                    arr[j + 1] = temp;
+                }
+            }
+        }
+        return arr;
+    }
+
     modifier notStart() {
         require(start == false, "is not allow to add fund after started");
         _;
@@ -16,11 +40,19 @@ contract MainContract {
         require(admin == msg.sender, "only owner can do this");
         _;
     }
+    modifier quolify() {
+        require(
+            paticipants_storage[msg.sender].partin == true,
+            "you are bankrupt"
+        );
+        _;
+    }
     struct PlayerInfo {
         uint256 balance;
         uint256 asset;
         uint256 business;
         bool partin;
+        bool bought;
     }
     //state variable
     /*  paticipants_storage : 
@@ -33,6 +65,7 @@ contract MainContract {
                            that it should be a dict like struct.
                         2. there should be default cost and sell price for em.
     */
+    mapping(uint256 => address) public key;
     mapping(address => PlayerInfo) public paticipants_storage;
     mapping(Shop => uint256[2]) public shops_storeage;
 
@@ -49,6 +82,17 @@ contract MainContract {
     // app.started({from:accounts[0]})
     function started() external onlyOwner {
         start = true;
+    }
+
+    function tick() external onlyOwner {
+        set_Shop_Storage();
+        for (uint256 i = 0; i < player; i++) {
+            paticipants_storage[key[i]].asset -= 100;
+            if (paticipants_storage[key[i]].asset <= 0) {
+                paticipants_storage[key[i]].partin = false;
+            }
+            paticipants_storage[key[i]].bought = false;
+        }
     }
 
     function getStorageUint() external view returns (uint256) {
@@ -96,7 +140,7 @@ contract MainContract {
         return seed % 2;
     }
 
-    function set_Shop_Storage() external onlyOwner {
+    function set_Shop_Storage() public onlyOwner {
         for (uint256 i = 0; i < 2; i++) {
             random();
             uint256 offset = getOffset();
@@ -127,6 +171,19 @@ contract MainContract {
         _;
     }
 
+    function buy(uint256 _amount) external paidfirst quolify {
+        if (paticipants_storage[msg.sender].bought == true)
+            revert("you already bought today");
+        uint256 volumn = _amount *
+            shops_storeage[Shop(paticipants_storage[msg.sender].business)][0];
+        if (paticipants_storage[msg.sender].asset < volumn)
+            revert("not enough money to operate");
+        uint256 roi = _amount *
+            shops_storeage[Shop(paticipants_storage[msg.sender].business)][1];
+        paticipants_storage[msg.sender].asset += (roi - volumn);
+        paticipants_storage[msg.sender].bought = true;
+    }
+
     function chooseShop(uint256 _i) external notStart {
         require(_i < 2 && _i >= 0, "no such choice");
         paticipants_storage[msg.sender].business = _i;
@@ -143,6 +200,8 @@ contract MainContract {
             paticipants_storage[msg.sender].balance *
             10;
         paticipants_storage[msg.sender].partin = true;
+        key[player] = msg.sender;
+        player += 1;
     }
 
     //has to be view from

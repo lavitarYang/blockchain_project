@@ -74,7 +74,79 @@ contract("MainContract", async () => {
         const playerState=await app.getPlayerState(accounts[5]);
         assert(playerState.partin === true);
     });
-    //bank 
+    //owner
+    /*  these function take random module which is not 
+        safe there were chance getting exception
+     */
+    it("owner set daily summary",async()=>{
+        const app = await MainContract.deployed();
+        const accounts = await web3.eth.getAccounts();
+        await app.playerSender(app.address,{from:accounts[6],value:web3.utils.toWei("0.00000000005","Ether")});
+        await app.initPlayerState({from:accounts[6]});
+        const playerStateb4 = await app.getPlayerState(accounts[6]);
+        await app.tick({from:accounts[0]});
+        const playerStateaf = await app.getPlayerState(accounts[6]);
+        const result = await app.getShop(1);
+        assert(result[0].words[0]!==15 && result[1].words[0]!==25);
+        assert(playerStateaf.asset==='499999900');
+    });
+    it("palyer buy once",async()=>{
+        const app = await MainContract.deployed();
+        const accounts = await web3.eth.getAccounts();
+        await app.playerSender(app.address,{from:accounts[7],value:web3.utils.toWei("0.00000000005","Ether")});
+        await app.initPlayerState({from:accounts[7]});
+        const playerStateb4 = await app.getPlayerState(accounts[7]);
+        const b4 = parseInt(playerStateb4.asset);
+        await app.buy(2000,{from:accounts[7]});
+        const playerStateaf = await app.getPlayerState(accounts[7]);
+        const af = parseInt(playerStateaf.asset);
+        // console.log(b4);
+        // console.log(af);
+        assert(af!==b4);
+    });
+    it("player buy twice should be invalid",async()=>{
+        const app = await MainContract.deployed();
+        const accounts = await web3.eth.getAccounts();
+        await app.playerSender(app.address,{from:accounts[2],value:web3.utils.toWei("0.00000000005","Ether")});
+        await app.initPlayerState({from:accounts[2]});
+        await app.buy(2000,{from:accounts[2]});
+        try{
+            await app.buy(2000,{from:accounts[2]});
+        }catch(err) {
+            assert(err.reason === "you already bought today");
+        }
+    });
+    it("player not enough money",async()=>{
+        const app = await MainContract.deployed();
+        const accounts = await web3.eth.getAccounts();
+        await app.playerSender(app.address,{from:accounts[4],value:web3.utils.toWei("0.00000000005","Ether")});
+        await app.initPlayerState({from:accounts[4]});
+        try{
+            await app.buy(2000000000000,{from:accounts[4]});
+        }catch(err) {
+            assert(err.reason === "not enough money to operate");
+        }
+    });
+    it("onchainsort is respond",async()=>{
+        const app = await MainContract.deployed();
+        const accounts = await web3.eth.getAccounts();
+        await app.playerSender(app.address,{from:accounts[1],value:web3.utils.toWei("0.000000000075","Ether")});
+        await app.playerSender(app.address,{from:accounts[2],value:web3.utils.toWei("0.000000000425","Ether")});
+        await app.playerSender(app.address,{from:accounts[3],value:web3.utils.toWei("0.0000000001025","Ether")});
+        await app.playerSender(app.address,{from:accounts[4],value:web3.utils.toWei("0.000000000001065","Ether")});
+        await app.playerSender(app.address,{from:accounts[5],value:web3.utils.toWei("0.00000000000275","Ether")});
+        await app.initPlayerState({from:accounts[1]});
+        await app.initPlayerState({from:accounts[2]});
+        await app.initPlayerState({from:accounts[3]});
+        await app.initPlayerState({from:accounts[4]});
+        await app.initPlayerState({from:accounts[5]});
+        const result = await app.onchainSort({from:accounts[0]});
+        console.log(result);
+
+        
+
+    });
+    //bank
     // it("set up bank utility", async () => {
     //     const bank = await Bank.deployed();
     //     const maincontract = await MainContract.deployed();
