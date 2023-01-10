@@ -5,27 +5,29 @@ contract MainContract {
     address public admin;
     bool start = false;
     uint256 player = 0;
+    rank[] public forb;
     struct rank {
         address player_address;
         uint256 asset;
     }
 
-    function onchainSort() external view onlyOwner returns (rank[] memory) {
-        rank[] memory arr = new rank[](player);
+    function onchainSort() external onlyOwner {
         for (uint256 i = 0; i < player; i++) {
-            arr[i].player_address = key[i];
-            arr[i].asset = paticipants_storage[key[i]].asset;
+            forb.push(rank(key[i], paticipants_storage[key[i]].asset));
         }
         for (uint256 i = 1; i < player; i++) {
             for (uint256 j = 0; j < player - i; j++) {
-                if (arr[j].asset < arr[j + 1].asset) {
-                    rank memory temp = arr[j];
-                    arr[j] = arr[j + 1];
-                    arr[j + 1] = temp;
+                if (forb[j].asset < forb[j + 1].asset) {
+                    rank memory temp = forb[j];
+                    forb[j] = forb[j + 1];
+                    forb[j + 1] = temp;
                 }
             }
         }
-        return arr;
+    }
+
+    function getRank() external view returns (rank[] memory) {
+        return forb;
     }
 
     modifier notStart() {

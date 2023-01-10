@@ -130,21 +130,13 @@ contract("MainContract", async () => {
     it("onchainsort is respond",async()=>{
         const app = await MainContract.deployed();
         const accounts = await web3.eth.getAccounts();
-        await app.playerSender(app.address,{from:accounts[1],value:web3.utils.toWei("0.000000000075","Ether")});
-        await app.playerSender(app.address,{from:accounts[2],value:web3.utils.toWei("0.000000000425","Ether")});
-        await app.playerSender(app.address,{from:accounts[3],value:web3.utils.toWei("0.0000000001025","Ether")});
-        await app.playerSender(app.address,{from:accounts[4],value:web3.utils.toWei("0.000000000001065","Ether")});
-        await app.playerSender(app.address,{from:accounts[5],value:web3.utils.toWei("0.00000000000275","Ether")});
-        await app.initPlayerState({from:accounts[1]});
-        await app.initPlayerState({from:accounts[2]});
-        await app.initPlayerState({from:accounts[3]});
-        await app.initPlayerState({from:accounts[4]});
-        await app.initPlayerState({from:accounts[5]});
-        const result = await app.onchainSort({from:accounts[0]});
+        await app.playerSender(app.address,{from:accounts[8],value:web3.utils.toWei("0.000000009075","Ether")});
+        await app.playerSender(app.address,{from:accounts[9],value:web3.utils.toWei("0.000000003425","Ether")});
+        await app.initPlayerState({from:accounts[8]});
+        await app.initPlayerState({from:accounts[9]});
+        await app.onchainSort({from:accounts[0]});
+        const result = await app.getRank();
         console.log(result);
-
-        
-
     });
     //bank
     // it("set up bank utility", async () => {
