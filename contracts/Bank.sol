@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 contract Bank {
     address public admin;
+
     mapping(address => storageUnit) public userAccounts;
     struct storageUnit {
         uint256 balance;

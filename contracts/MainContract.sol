@@ -1,27 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "./Bank.sol";
 
 contract MainContract {
     address public admin;
-    address bank_interface;
+    bool start = false;
+    modifier notStart() {
+        require(start == false, "is not allow to add fund after started");
+        _;
+    }
     enum Shop {
         Butcher,
         Backery
     }
     modifier onlyOwner() {
-        if (admin == msg.sender) revert("only owner can do this");
+        require(admin == msg.sender, "only owner can do this");
         _;
     }
     struct PlayerInfo {
-        uint256 bank_balance;
+        uint256 balance;
         uint256 asset;
-        Shop business;
-        bool out;
+        uint256 business;
+        bool partin;
     }
     //state variable
     /*  paticipants_storage : 
-                        1. at least 2 member to game
+                        1. at least 5 member to game
                         2. asset is 10 times bank_balance.
                         3. out default as false
         
@@ -41,40 +44,37 @@ contract MainContract {
         shops_storeage[Shop(1)][1] = 25;
     }
 
-    // ----------------------instantiate interface--------------------
-    /*  it has to be called out off Bank and in order
-        bankInstance = await Bank.deployed()
-        app          = await MainContract.depolyed()
-        await app.depoBank(bankInstance.address);
-            -after done above job then move to bank utility section
-            -for instance:
-        response = await app.Bank_response()
-        balance  = await app.Bank_getbalance()
+    // ----------------------owner utility              ----------------
+    // besure to invoke with accounts[0]
+    // app.started({from:accounts[0]})
+    function started() external onlyOwner {
+        start = true;
+    }
+
+    function getStorageUint() external view returns (uint256) {
+        return paticipants_storage[msg.sender].balance;
+    }
+
+    // ----------------------add fund to contract owner ----------------
+    /*  after deploy contract 
+        first add some fund to start some function
+        use syntax 
+        ```
+        await maincontract.addFundToContract(maincontract.address,{from:msg.sender,value:web3.utils.toWei('1','Ether')})
+        ```
+        player could not use this to participant
      */
-    function depoBank(address _a) external {
-        bank_interface = _a;
+    receive() external payable {}
+
+    fallback() external payable {}
+
+    function balanceOfContract() public view returns (uint256) {
+        return address(this).balance;
     }
 
-    // ----------------------bank utility-----------------------------
-
-    function Bank_response() external view returns (string memory) {
-        Bank bank_instance = Bank(bank_interface);
-        return bank_instance.response();
-    }
-
-    function Bank_getbalance() external view returns (uint256) {
-        Bank bank_instance = Bank(bank_interface);
-        return bank_instance.getbalance();
-    }
-
-    function Bank_deposit() external payable {
-        Bank bank_instance = Bank(bank_interface);
-        bank_instance.deposit();
-    }
-
-    function Bank_withdraw(uint256 amount) external payable {
-        Bank bank_instance = Bank(bank_interface);
-        bank_instance.withdraw(amount);
+    function ownerSender(address payable _to) external payable onlyOwner {
+        (bool sent, ) = _to.call{value: msg.value}("");
+        require(sent, "fail");
     }
 
     // ----------------------shop utility-----------------------------
@@ -82,11 +82,6 @@ contract MainContract {
     function getShop(uint256 _i) external view returns (uint256[2] memory) {
         return shops_storeage[Shop(_i)];
     }
-
-    // function selectShop(uint256 _i) external {
-    //     if (_i < 2 && _i >= 0)
-    //         revert("there are currently two types of shop to chose");
-    // }
 
     //price offset
     function getOffset() internal view returns (uint256) {
@@ -101,7 +96,7 @@ contract MainContract {
         return seed % 2;
     }
 
-    function set_Shop_Storage() external {
+    function set_Shop_Storage() external onlyOwner {
         for (uint256 i = 0; i < 2; i++) {
             random();
             uint256 offset = getOffset();
@@ -124,10 +119,30 @@ contract MainContract {
     //initiallize for default state
     /*initState(accounts[0],[bank_balance,bank_balance*10,enumShop])
      */
-    function initPlayerState(address _a, PlayerInfo calldata _p) public {
-        PlayerInfo memory p;
-        // if()asdfsdfa
-        paticipants_storage[_a] = _p;
+    modifier paidfirst() {
+        require(
+            (paticipants_storage[msg.sender].balance > 0),
+            "pay to participant"
+        );
+        _;
+    }
+
+    function chooseShop(uint256 _i) external notStart {
+        require(_i < 2 && _i >= 0, "no such choice");
+        paticipants_storage[msg.sender].business = _i;
+    }
+
+    function playerSender(address payable _to) external payable notStart {
+        (bool sent, ) = _to.call{value: msg.value}("");
+        require(sent, "fail");
+        paticipants_storage[msg.sender].balance += msg.value;
+    }
+
+    function initPlayerState() external paidfirst {
+        paticipants_storage[msg.sender].asset =
+            paticipants_storage[msg.sender].balance *
+            10;
+        paticipants_storage[msg.sender].partin = true;
     }
 
     //has to be view from
